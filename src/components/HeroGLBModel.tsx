@@ -43,7 +43,7 @@ function HeroModel() {
 
   return (
     <group ref={groupRef}>
-      <primitive object={clonedScene} scale={2.5} />
+      <primitive object={clonedScene} scale={1.0} />
     </group>
   );
 }
