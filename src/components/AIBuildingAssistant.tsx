@@ -7,13 +7,56 @@ type Message = { role: 'user' | 'assistant'; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/building-assistant`;
 
+// Product data from the Excel file (shapesinfo.xlsx)
 const products = [
-  { id: 'cube-teal', name: 'مكعب فيروزي', price: 49, shape: 'مكعب', color: 'فيروزي', description: 'مكعب فيروزي مذهل بحواف مثالية' },
-  { id: 'cube-coral', name: 'مكعب مرجاني', price: 59, shape: 'مكعب', color: 'مرجاني', description: 'مكعب مرجاني نابض بالحياة' },
-  { id: 'hex-magenta', name: 'سداسي أرجواني', price: 69, shape: 'سداسي', color: 'أرجواني', description: 'سداسي أرجواني جريء' },
-  { id: 'hex-gold', name: 'سداسي ذهبي', price: 79, shape: 'سداسي', color: 'ذهبي', description: 'سداسي ذهبي فاخر' },
-  { id: 'cube-magenta', name: 'مكعب أرجواني', price: 55, shape: 'مكعب', color: 'أرجواني', description: 'مكعب أرجواني كهربائي' },
-  { id: 'hex-teal', name: 'سداسي فيروزي', price: 65, shape: 'سداسي', color: 'فيروزي', description: 'سداسي فيروزي هادئ' },
+  { 
+    id: 'hex-dark-green', 
+    name: 'سداسي أخضر داكن', 
+    price: 2, 
+    dimensions: 'الطول = 5 سم، العرض = 5 سم، الارتفاع = 5 سم',
+    color: 'أخضر داكن', 
+    image: 'DarkGreen.png'
+  },
+  { 
+    id: 'hex-dark-blue', 
+    name: 'سداسي أزرق داكن', 
+    price: 3, 
+    dimensions: 'الطول = 6 سم، العرض = 6 سم، الارتفاع = 6 سم',
+    color: 'أزرق داكن', 
+    image: 'DarkBlue.png'
+  },
+  { 
+    id: 'hex-dark-red', 
+    name: 'سداسي أحمر داكن', 
+    price: 4, 
+    dimensions: 'الطول = 7 سم، العرض = 7 سم، الارتفاع = 7 سم',
+    color: 'أحمر داكن', 
+    image: 'DarkRed.png'
+  },
+  { 
+    id: 'hex-light-green', 
+    name: 'سداسي أخضر فاتح', 
+    price: 5, 
+    dimensions: 'الطول = 8 سم، العرض = 8 سم، الارتفاع = 8 سم',
+    color: 'أخضر فاتح', 
+    image: 'LightGreen.png'
+  },
+  { 
+    id: 'hex-light-blue', 
+    name: 'سداسي أزرق فاتح', 
+    price: 6, 
+    dimensions: 'الطول = 9 سم، العرض = 9 سم، الارتفاع = 9 سم',
+    color: 'أزرق فاتح', 
+    image: 'LightBlue.png'
+  },
+  { 
+    id: 'hex-light-red', 
+    name: 'سداسي أحمر فاتح', 
+    price: 7, 
+    dimensions: 'الطول = 10 سم، العرض = 10 سم، الارتفاع = 10 سم',
+    color: 'أحمر فاتح', 
+    image: 'LightRed.png'
+  },
 ];
 
 async function streamChat({

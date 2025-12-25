@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { HfInference } from "https://esm.sh/@huggingface/inference@2.3.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,63 +13,63 @@ serve(async (req) => {
 
   try {
     const { messages, products } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const HF_TOKEN = Deno.env.get("HUGGING_FACE_ACCESS_TOKEN");
     
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    if (!HF_TOKEN) {
+      throw new Error("HUGGING_FACE_ACCESS_TOKEN is not configured");
     }
 
-    const systemPrompt = `أنت مساعد أبعاد للذكاء الاصطناعي. تساعد العملاء في اختيار الأشكال الهندسية ثلاثية الأبعاد المناسبة (المكعبات والسداسيات) لمشاريع البناء والتصميم الخاصة بهم. يجب أن تجيب دائماً باللغة العربية.
+    const hf = new HfInference(HF_TOKEN);
+
+    const systemPrompt = `أنت مساعد أبعاد للذكاء الاصطناعي، متخصص في مساعدة العملاء على اختيار الأشكال السداسية ثلاثية الأبعاد المناسبة لمشاريع البناء والتصميم. يجب أن تجيب دائماً باللغة العربية.
 
 المنتجات المتاحة:
-${products.map((p: any) => `- ${p.name}: ${p.shape}، لون ${p.color}، $${p.price} - ${p.description}`).join('\n')}
+${products.map((p: any) => `
+📦 ${p.name}
+- الأبعاد: ${p.dimensions}
+- اللون: ${p.color}
+- السعر: ${p.price} ريال سعودي
+- الصورة: ${p.image}
+`).join('\n')}
 
 مهمتك هي:
-1. السؤال عن مشروعهم (حجم الغرفة، الغرض، الأهداف الجمالية)
-2. التوصية بمنتجات وكميات محددة بناءً على احتياجاتهم
-3. تقديم اقتراحات ترتيب إبداعية
-4. حساب التكاليف الإجمالية عند الطلب
+1. السؤال عن مشروعهم (حجم المساحة، الغرض، الأهداف الجمالية)
+2. حساب عدد القطع المطلوبة بناءً على المساحة والأبعاد
+3. التوصية بمنتجات وكميات محددة بناءً على احتياجاتهم
+4. عرض تفاصيل كل منتج موصى به (الاسم، الأبعاد، اللون، السعر)
+5. تقديم اقتراحات ترتيب إبداعية
+6. حساب التكاليف الإجمالية
 
+عند التوصية بمنتج، اعرض جميع التفاصيل بشكل واضح ومنظم.
 كن مفيداً ومبدعاً ومتحمساً للتصميم الهندسي. اجعل الردود موجزة ولكن غنية بالمعلومات.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
+    // Build the conversation for ALLAM
+    const conversationHistory = messages.map((m: any) => 
+      `${m.role === 'user' ? 'المستخدم' : 'المساعد'}: ${m.content}`
+    ).join('\n');
+
+    const fullPrompt = `${systemPrompt}\n\nالمحادثة:\n${conversationHistory}\n\nالمساعد:`;
+
+    // Use ALLAM model from Hugging Face
+    const response = await hf.textGeneration({
+      model: "ALLaM-AI/ALLaM-7B-Instruct-preview",
+      inputs: fullPrompt,
+      parameters: {
+        max_new_tokens: 1024,
+        temperature: 0.7,
+        top_p: 0.9,
+        return_full_text: false,
       },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
-        stream: true,
-      }),
     });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required. Please add credits." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      return new Response(JSON.stringify({ error: "AI service error" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const generatedText = response.generated_text || "";
 
-    return new Response(response.body, {
+    // Return as SSE format for compatibility with existing frontend
+    const sseData = `data: ${JSON.stringify({
+      choices: [{ delta: { content: generatedText } }]
+    })}\n\ndata: [DONE]\n\n`;
+
+    return new Response(sseData, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (error) {
