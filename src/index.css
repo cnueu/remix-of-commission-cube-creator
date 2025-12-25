@@ -1,0 +1,190 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Commission Color Palette */
+    --teal: 174 85% 35%;
+    --coral: 8 85% 65%;
+    --magenta: 340 78% 60%;
+    --gold: 38 90% 55%;
+    
+    /* Background gradient colors - deep red */
+    --background: 0 70% 30%;
+    --background-dark: 0 75% 20%;
+    --background-light: 0 65% 40%;
+    --foreground: 0 0% 100%;
+
+    --card: 0 70% 25%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 0 70% 25%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 174 85% 35%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 174 85% 35%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 0 50% 35%;
+    --muted-foreground: 0 20% 75%;
+
+    --accent: 340 78% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --highlight: 38 90% 55%;
+    --highlight-foreground: 0 0% 10%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 40% 45%;
+    --input: 0 40% 45%;
+    --ring: 38 90% 55%;
+
+    --radius: 0.5rem;
+
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(0 75% 20%) 0%, hsl(0 70% 30%) 50%, hsl(0 65% 40%) 100%);
+    --gradient-coral: linear-gradient(135deg, hsl(8 85% 55%) 0%, hsl(8 85% 65%) 100%);
+    --gradient-magenta: linear-gradient(135deg, hsl(340 78% 50%) 0%, hsl(340 78% 60%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(38 90% 45%) 0%, hsl(38 90% 55%) 100%);
+    --gradient-multicolor: linear-gradient(135deg, hsl(174 85% 35%) 0%, hsl(8 85% 65%) 33%, hsl(340 78% 60%) 66%, hsl(38 90% 55%) 100%);
+
+    /* Shadows */
+    --shadow-glow-teal: 0 0 60px hsl(174 85% 35% / 0.5);
+    --shadow-glow-coral: 0 0 40px hsl(8 85% 65% / 0.4);
+    --shadow-glow-magenta: 0 0 40px hsl(340 78% 60% / 0.4);
+    --shadow-glow-gold: 0 0 40px hsl(38 90% 55% / 0.4);
+
+    /* Fonts */
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'Inter', sans-serif;
+
+    /* Sidebar */
+    --sidebar-background: 0 70% 25%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 174 85% 35%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 340 78% 60%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 40% 45%;
+    --sidebar-ring: 38 90% 55%;
+  }
+
+  .dark {
+    --background: 0 75% 12%;
+    --foreground: 0 0% 100%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    background: var(--gradient-multicolor);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bg-hero-gradient {
+    background: var(--gradient-hero);
+  }
+
+  .shadow-glow-teal {
+    box-shadow: var(--shadow-glow-teal);
+  }
+
+  .shadow-glow-coral {
+    box-shadow: var(--shadow-glow-coral);
+  }
+
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .font-body {
+    font-family: var(--font-body);
+  }
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.8s ease-out forwards;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.8s ease-out forwards;
+}
+
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-500 { animation-delay: 0.5s; }
