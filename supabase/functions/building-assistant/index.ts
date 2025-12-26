@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { HfInference } from "https://esm.sh/@huggingface/inference@2.3.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,8 +17,6 @@ serve(async (req) => {
     if (!HF_TOKEN) {
       throw new Error("HUGGING_FACE_ACCESS_TOKEN is not configured");
     }
-
-    const hf = new HfInference(HF_TOKEN);
 
     const systemPrompt = `أنت مساعد أبعاد للذكاء الاصطناعي، متخصص في مساعدة العملاء على اختيار الأشكال السداسية ثلاثية الأبعاد المناسبة لمشاريع البناء والتصميم. يجب أن تجيب دائماً باللغة العربية.
 
@@ -50,19 +47,32 @@ ${products.map((p: any) => `
 
     const fullPrompt = `${systemPrompt}\n\nالمحادثة:\n${conversationHistory}\n\nالمساعد:`;
 
-    // Use ALLAM model from Hugging Face
-    const response = await hf.textGeneration({
-      model: "ALLaM-AI/ALLaM-7B-Instruct-preview",
-      inputs: fullPrompt,
-      parameters: {
-        max_new_tokens: 1024,
-        temperature: 0.7,
-        top_p: 0.9,
-        return_full_text: false,
+    // Use ALLAM model via new Hugging Face router endpoint
+    const response = await fetch("https://router.huggingface.co/hf-inference/models/ALLaM-AI/ALLaM-7B-Instruct-preview", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${HF_TOKEN}`,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        inputs: fullPrompt,
+        parameters: {
+          max_new_tokens: 1024,
+          temperature: 0.7,
+          top_p: 0.9,
+          return_full_text: false,
+        },
+      }),
     });
 
-    const generatedText = response.generated_text || "";
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Hugging Face API error:", response.status, errorText);
+      throw new Error(`Hugging Face API error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    const generatedText = Array.isArray(result) ? result[0]?.generated_text : result.generated_text || "";
 
     // Return as SSE format for compatibility with existing frontend
     const sseData = `data: ${JSON.stringify({
