@@ -12,10 +12,10 @@ serve(async (req) => {
 
   try {
     const { messages, products } = await req.json();
-    const HF_TOKEN = Deno.env.get("HUGGING_FACE_ACCESS_TOKEN");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
-    if (!HF_TOKEN) {
-      throw new Error("HUGGING_FACE_ACCESS_TOKEN is not configured");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
     }
 
     const systemPrompt = `أنت مساعد أبعاد للذكاء الاصطناعي، متخصص في مساعدة العملاء على اختيار الأشكال السداسية ثلاثية الأبعاد المناسبة لمشاريع البناء والتصميم. يجب أن تجيب دائماً باللغة العربية.
@@ -40,46 +40,44 @@ ${products.map((p: any) => `
 عند التوصية بمنتج، اعرض جميع التفاصيل بشكل واضح ومنظم.
 كن مفيداً ومبدعاً ومتحمساً للتصميم الهندسي. اجعل الردود موجزة ولكن غنية بالمعلومات.`;
 
-    // Build the conversation for ALLAM
-    const conversationHistory = messages.map((m: any) => 
-      `${m.role === 'user' ? 'المستخدم' : 'المساعد'}: ${m.content}`
-    ).join('\n');
-
-    const fullPrompt = `${systemPrompt}\n\nالمحادثة:\n${conversationHistory}\n\nالمساعد:`;
-
-    // Use ALLAM model via new Hugging Face router endpoint
-    const response = await fetch("https://router.huggingface.co/hf-inference/models/ALLaM-AI/ALLaM-7B-Instruct-preview", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${HF_TOKEN}`,
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        inputs: fullPrompt,
-        parameters: {
-          max_new_tokens: 1024,
-          temperature: 0.7,
-          top_p: 0.9,
-          return_full_text: false,
-        },
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...messages,
+        ],
+        stream: true,
       }),
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ error: "تم تجاوز الحد المسموح. يرجى المحاولة لاحقاً." }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: "نفدت رصيد الخدمة." }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const errorText = await response.text();
-      console.error("Hugging Face API error:", response.status, errorText);
-      throw new Error(`Hugging Face API error: ${response.status}`);
+      console.error("AI gateway error:", response.status, errorText);
+      return new Response(JSON.stringify({ error: "خطأ في خدمة الذكاء الاصطناعي" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const result = await response.json();
-    const generatedText = Array.isArray(result) ? result[0]?.generated_text : result.generated_text || "";
-
-    // Return as SSE format for compatibility with existing frontend
-    const sseData = `data: ${JSON.stringify({
-      choices: [{ delta: { content: generatedText } }]
-    })}\n\ndata: [DONE]\n\n`;
-
-    return new Response(sseData, {
+    return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (error) {
